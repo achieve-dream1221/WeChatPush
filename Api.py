@@ -25,31 +25,46 @@ class API:
     @staticmethod
     def get_dujitang() -> str:
         content = requests.get("https://api.btstu.cn/yan/api.php").text
+        if not content:
+            print_error("毒鸡汤: https://api.btstu.cn/yan/api.php 接口请求失败")
+            exit_with_error()
         print_info("毒鸡汤", content)
         return content
 
     # 情话
     @staticmethod
     def get_love_message() -> str:
-        content = requests.get("https://api.lovelive.tools/api/SweetNothings/Web/1").json()["returnObj"]['content']
+        response = requests.get("https://api.lovelive.tools/api/SweetNothings/Web/1").json()
+        if response['code'] != 200:
+            print_error("情话: https://api.lovelive.tools/api/SweetNothings/Web/1 接口请求失败")
+            print(response)
+            exit_with_error()
+        content = response["returnObj"]['content']
         print_info("情话", content)
         return content
 
+    def __get_weather(self):
+        url = f"https://v2.alapi.cn/api/tianqi?token={self.config['alapi_token']}&city={self.config['city']}" \
+              f"&province={self.config['province']}"
+        response = requests.get(url).json()
+        if response['code'] != 200:
+            print_error(f"天气接口:{url} 请求失败")
+            print(response)
+            exit_with_error()
+        return response['data']
+
     # 天气完整版
     def get_weather_all(self) -> list[str]:
-        data = requests.get(f"https://v2.alapi.cn/api/tianqi?token={self.config['alapi_token']}"
-                            f"&city={self.config['city']}&province={self.config['province']}").json().get('data', {})
+        data = self.__get_weather()
         content = [self.config['city'], data['weather'], data['max_temp'], data['min_temp'],
                    data['temp'], data['wind'], data['air_pm25'], data['aqi']['air_level'],
                    data['sunrise'], data['sunset']]
-        # content = f"{data['weather']}, 当前温度: {data['temp']}℃, 最高温度: {data['max_temp']}℃, 最低温度: {data['min_temp']}℃"
         print_info("天气完整版", str(content))
         return content
 
     # 天气精简版
     def get_weather_simple(self) -> list[str]:
-        data = requests.get(f"https://v2.alapi.cn/api/tianqi?token={self.config['alapi_token']}"
-                            f"&city={self.config['city']}&province={self.config['province']}").json().get('data', {})
+        data = self.__get_weather()
         content = [self.config['city'],
                    f"{data['weather']}, 当前温度: {data['temp']}℃, 最高温度: {data['max_temp']}℃, 最低温度: {data['min_temp']}℃"]
         print_info("天气精简版", str(content))
@@ -70,8 +85,13 @@ class API:
 
     # 彩虹屁
     def get_rainbow_pi(self) -> str:
-        content = requests.get("http://api.tianapi.com/caihongpi/index"
-                               f"?key={self.config['tianapi_token']}").json()["newslist"][0]['content']
+        url = f"http://api.tianapi.com/caihongpi/index?key={self.config['tianapi_token']}"
+        response = requests.get(url).json()
+        if response['code'] != 200:
+            print_error(f"彩虹屁接口{url}, 请求失败")
+            print(response)
+            exit_with_error()
+        content = response["newslist"][0]['content']
         print_info("彩虹屁", content)
         return content
 
@@ -90,10 +110,15 @@ class API:
     @staticmethod
     def get_everyday_note():
         data = requests.get("http://open.iciba.com/dsapi/").json()
-        # note: 汉语, content: 英语
-        content = data['note'] + data['content']
-        print_info("词霸每日一句", content)
-        return content
+        try:
+            # note: 汉语, content: 英语
+            content = data['note'] + " " + data['content']
+            print_info("词霸每日一句", content)
+            return content
+        except KeyError:
+            print_error(f"词霸每日一句:http://open.iciba.com/dsapi/, 接口请求失败")
+            print(data)
+            exit_with_error()
 
     @staticmethod
     def __get_birth_text(name: str, days: int):
