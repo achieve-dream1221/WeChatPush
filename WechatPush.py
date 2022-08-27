@@ -53,17 +53,17 @@ class WeChatPush:
         self.data["data"] = send_data
         response = requests.post(self.send_message_url, headers=self.headers, json=self.data).json()
         # 返回码说明: https://mp.weixin.qq.com/debug/cgi-bin/readtmpl?t=tmplmsg/faq_tmpl
-        match response["errcode"]:
-            case 40037:
-                print_error("推送消息失败，请检查模板id是否正确")
-            case 40036:
-                print_error("推送消息失败，请检查模板id是否为空")
-            case 40003:
-                print_error("推送消息失败，请检查微信号是否正确")
-            case 0:
-                print("[**Success**]: 推送消息成功!")
-            case _:
-                print_error(response)
+        err_code = response['errcode']
+        if err_code == 40037:
+            print_error("推送消息失败，请检查模板id是否正确")
+        elif err_code == 40036:
+            print_error("推送消息失败，请检查模板id是否为空")
+        elif err_code == 40003:
+            print_error("推送消息失败，请检查微信号是否正确")
+        elif err_code == 0:
+            print("[**Success**]: 推送消息成功!")
+        else:
+            print_error(response)
 
     # 放入数据
     def put_send_data(self, keys: list[str], values: list[str], colors: list[Color] = None):
