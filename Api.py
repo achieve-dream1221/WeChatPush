@@ -77,7 +77,7 @@ class API:
         content = ""
         for k, v in videos.items():
             if weekday in v[0]:
-                content += (k + ", 今日" + v[1] + "点更新")
+                content += (k + ", 今日" + v[1] + "点更新; ")
         if content == "":
             content = "今日没有你追的剧哦"
         print_info("追剧提醒", content)
